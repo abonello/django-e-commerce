@@ -253,3 +253,140 @@ As at the end of
 [Course  > Putting It All Together | ECommerce Mini Project  > 
 Products and a Shopping Cart   > Reusing an accounts app](https://courses.codeinstitute.net/courses/course-v1:CodeInstitute+F101+2017_T1/courseware/c95cdb47b7bb40e49bbfb75cb4c29114/01fbdaedba5d4db19ad118cbe07c1ab7/?activate_block_id=block-v1%3ACodeInstitute%2BF101%2B2017_T1%2Btype%40sequential%2Bblock%4001fbdaedba5d4db19ad118cbe07c1ab7)
 ---
+
+### Creating an app from the command line
+
+For this section we will create an `home` app. This will be for pages that are not 
+part of the core logic of ecommerce app, ex. about page.
+```bash 
+(master) $ python3 manage.py startapp home
+```
+
+1. Create a view to render an html page.
+    In `home.views.py` define a function for a new view.
+    ```python 
+    from django.shortcuts import render
+
+    def index(request):
+        """
+            A view that displays the index page.
+        """
+        
+        return render(request, 'index.html')
+    ```
+
+2. In `home` create a `templates` folder and inside this create an `index.html` 
+    file.
+    ```
+    {% extends 'base.html %}
+
+    {% block content %}
+    
+    {% endblock %}
+    ```
+
+I added a few things:
+1. To `ecommerce/urls.py` I imported urls from home and used an include 
+    url pattern:
+    ```python 
+    . . .
+    from home import urls as urls_home
+    
+    urlpatterns = [
+        url(r'^', include(urls_home)),
+        . . .
+    ]
+    ```
+2. In the `home` folder I created a `urls.py`, imported the view we created for 
+    index and created a simple url pattern:
+    ```python 
+    from django.conf.urls import url
+    from .views import index
+    
+    urlpatterns = [
+        url(r'^$', index, name='index'),
+    ]
+    ```
+
+In this way I can reach the root url without errors.
+
+Just for checking I placed some dummy text in the content block of 
+`home/index.html`. This is not rendering. It is like it is not finding the 
+template or rendering something else. It is actually rendering the index.html 
+from the accounts app.
+
+I added `home` to the `INSTALLED_APPS` in `systems.py`. The order of the list is 
+important. `home` has to be included before `accounts` otherwise the `index.html` 
+in `accounts` will be rendered.
+
+---
+
+### Products App 
+Create app called products. This will hold the core logic used to upload products 
+to our web page.
+```bash 
+(master) $ python3 manage.py startapp products
+```
+
+### Adding a model to products
+
+This model will create the database for our products. Here we specify the columns 
+that will be within the database table. Columns:
+* name
+* description
+* price
+* image - image will be holding url for image. We will need to install `Pillows`
+
+```bash 
+(master) $ sudo pip3 install pillow
+```
+
+created string representation that need to be added to `admin.py` to allow it 
+to add products to the admin panel.
+
+
+### migrate the new models
+```python 
+(master) $ python3 manage.py makemigrations products
+Migrations for 'products':
+  products/migrations/0001_initial.py
+    - Create model Product
+(master) $ python3 manage.py migrate products
+Operations to perform:
+  Apply all migrations: products
+Running migrations:
+  Applying products.0001_initial... OK
+```
+
+
+### testing the models
+
+in `products/tests.py`
+```python 
+from django.test import TestCase
+from .models import Product
+
+# Create your tests here.
+class ProductTest(TestCase):
+    """
+        Here we will define the tests that we will run against our
+        Product models.
+    """
+    
+    def test_str(self):
+        test_name = Product(name="A Product")
+        self.assertEqual(str(test_name), 'A Product')
+```
+
+#### Running the tests.
+```bash 
+(master) $ python3 manage.py test products
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+Destroying test database for alias 'default'...
+```
